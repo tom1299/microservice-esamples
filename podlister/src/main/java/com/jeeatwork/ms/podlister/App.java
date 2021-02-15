@@ -3,12 +3,56 @@
  */
 package com.jeeatwork.ms.podlister;
 
+import com.fasterxml.jackson.databind.ser.std.StringSerializer;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+
+@Slf4j
 public class App {
-    public String getGreeting() {
-        return "Hello world.";
+
+    private App() {
+        // Hidden visibility
     }
 
-    public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+    private void run(String namespace) {
+        final KubernetesClient client = new DefaultKubernetesClient().inNamespace(namespace);
+        final KafkaProducer kafkaProducer = new KafkaProducer<>(KafkaUtils.createProducerProps(this));
+
+        PodLister podLister = new PodLister();
+        podLister.setKafkaProducer(kafkaProducer);
+        podLister.setKubernetesClient(client);
+
+        ScheduledExecutorService executorService = Executors
+                .newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(() -> podLister.publishPodList(),5, 30, TimeUnit.SECONDS);
+    }
+
+    public static void main(String[] args) throws Exception {
+        log.info("Pod listener command line arguments %s", args);
+
+        String namespace;
+        if (args.length > 0) {
+            namespace = args[0];
+        }
+        else {
+            namespace = new String(Files.readAllBytes(Paths.get(
+                    "/var/run/secrets/kubernetes.io/serviceaccount/namespace")));
+        }
+
+        log.info("Starting pod listener in namespace %s", namespace);
+        App app = new App();
+        app.run(namespace);
     }
 }
