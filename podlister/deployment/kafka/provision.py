@@ -1,9 +1,11 @@
 import socket
 import logging
 import os
+import json
 from kubernetes import client, config, utils, watch
 from itertools import chain
 from confluent_kafka import Producer
+from retrying import retry
 
 logger = logging.getLogger('provision')
 logger.addHandler(logging.StreamHandler())
@@ -28,6 +30,7 @@ def is_port_open(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1)
     try:
+        logger.info("Trying ip %s and port %s", ip, port)
         result = sock.connect_ex((ip, port))
         return result == 0
     except:
@@ -36,13 +39,16 @@ def is_port_open(ip, port):
         sock.close()
 
 
+@retry(wait_fixed=1000, stop_max_attempt_number=120)
 def get_node_listening(port):
     ip_addresses = get_node_ips()
     for ip in ip_addresses:
         if is_port_open(ip, port):
             return ip
+    raise Exception(f"No node found listening on port {port}")
 
 
+@retry(wait_fixed=1000, stop_max_attempt_number=60)
 def get_external_port(service_name, namespace):
     return list(map(lambda ser: ser.spec.ports[0].node_port, filter(lambda s: s.metadata.name.endswith(service_name),
                                                                     core_api.list_namespaced_service(namespace).items)))[0]
@@ -115,19 +121,37 @@ def install_kafka_operator(namespace):
                 logger.info('Cluster operator not yet running')
 
 
+def create_cluster(namespace, cluster_name):
+    deployments = apps_api.list_namespaced_deployment(namespace).items
+    if list(filter(lambda deployment: deployment.metadata.name.startswith(cluster_name), deployments)):
+        logger.info('Cluster already deployed in namespace %s', namespace)
+        return
+
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    json_file = current_dir + "/kafka-persistent-single.json"
+    with open(json_file) as file:
+        body = json.load(file)
+    header_params = {'Accept': 'application/json, application/yaml'}
+    core_api.api_client.call_api('/apis/kafka.strimzi.io/v1beta1/namespaces/kafka-dev/kafkas', 'POST',
+                                 header_params=header_params,
+                                 body=body)
+    logger.info('Cluster successfully deployed in namespace %s', namespace)
+
+
 service_name = "external"
 namespace = "kafka-dev"
 
-# external_port = get_external_port(service_name + "-bootstrap", namespace)
-#
-# node_listening = get_node_listening(external_port)
-#
-# if not node_listening:
-#     raise Exception(f"No node listening on port {external_port}")
-#
-# logger.info("Using node %s for access", node_listening)
-#
-# test_cluster(node_listening, external_port)
-
 create_namespace(namespace)
 install_kafka_operator(namespace)
+create_cluster(namespace, "my-cluster")
+
+external_port = get_external_port(service_name + "-bootstrap", namespace)
+
+node_listening = get_node_listening(external_port)
+
+if not node_listening:
+    raise Exception(f"No node listening on port {external_port}")
+
+logger.info("Using node %s for access", node_listening)
+
+test_cluster(node_listening, external_port)
