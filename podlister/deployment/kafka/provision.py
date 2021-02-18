@@ -11,7 +11,6 @@ logger = logging.getLogger('provision')
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.INFO)
 
-# Configs can be set in Configuration class directly or using helper utility
 config.load_kube_config()
 
 core_api = client.CoreV1Api()
@@ -51,7 +50,8 @@ def get_node_listening(port):
 @retry(wait_fixed=1000, stop_max_attempt_number=60)
 def get_external_port(service_name, namespace):
     return list(map(lambda ser: ser.spec.ports[0].node_port, filter(lambda s: s.metadata.name.endswith(service_name),
-                                                                    core_api.list_namespaced_service(namespace).items)))[0]
+                                                                    core_api.list_namespaced_service(
+                                                                        namespace).items)))[0]
 
 
 def test_cluster(bootstrap_ip, bootstrap_port):
@@ -100,7 +100,7 @@ def install_kafka_operator(namespace):
             spec = deployment.spec
 
             if not deployment.metadata.name == 'strimzi-cluster-operator':
-                logger.info('Not handling deployment %s',  deployment.metadata.name)
+                logger.info('Not handling deployment %s', deployment.metadata.name)
                 continue
 
             logger.info(
@@ -131,21 +131,21 @@ def create_cluster(namespace, cluster_name):
     json_file = current_dir + "/kafka-persistent-single.json"
     with open(json_file) as file:
         body = json.load(file)
-    header_params = {'Accept': 'application/json, application/yaml'}
-    core_api.api_client.call_api('/apis/kafka.strimzi.io/v1beta1/namespaces/kafka-dev/kafkas', 'POST',
-                                 header_params=header_params,
-                                 body=body)
+
+    custom_objects_api = client.CustomObjectsApi(core_api.api_client)
+    custom_objects_api.create_namespaced_custom_object(group="kafka.strimzi.io", version="v1beta1", plural="kafkas",
+                                                       namespace=namespace, body=body)
     logger.info('Cluster successfully deployed in namespace %s', namespace)
 
 
 service_name = "external"
-namespace = "kafka-dev"
+target_namespace = "kafka-dev"
 
-create_namespace(namespace)
-install_kafka_operator(namespace)
-create_cluster(namespace, "my-cluster")
+create_namespace(target_namespace)
+install_kafka_operator(target_namespace)
+create_cluster(target_namespace, "my-cluster")
 
-external_port = get_external_port(service_name + "-bootstrap", namespace)
+external_port = get_external_port(service_name + "-bootstrap", target_namespace)
 
 node_listening = get_node_listening(external_port)
 
