@@ -2,6 +2,7 @@ import socket
 import logging
 import os
 import json
+import sys
 from kubernetes import client, config, utils, watch
 from itertools import chain
 from confluent_kafka import Producer
@@ -136,15 +137,18 @@ def create_cluster(namespace):
         logger.info('Cluster already deployed in namespace %s', namespace)
         return
 
+    # Workaround for application of custom resources.
+    # See https://github.com/kubernetes-client/python/issues/740
     custom_objects_api = client.CustomObjectsApi(core_api.api_client)
     custom_objects_api.create_namespaced_custom_object(group="kafka.strimzi.io", version="v1beta1", plural="kafkas",
                                                        namespace=namespace, body=body)
     logger.info('Cluster successfully deployed in namespace %s', namespace)
 
 
-def main():
-    service_name = "external"
+def main(argv):
     target_namespace = "kafka-dev"
+    if argv:
+        target_namespace = argv[0]
 
     logger.info(f"Starting to provision kafka cluster in namespace {target_namespace}")
 
@@ -155,7 +159,7 @@ def main():
 
     logger.info(f"Kafka cluster successfully installed waiting for services to become available")
 
-    external_port = get_external_port(service_name + "-bootstrap", target_namespace)
+    external_port = get_external_port("external-bootstrap", target_namespace)
 
     node_listening = get_node_listening(external_port)
     if not node_listening:
@@ -167,4 +171,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
