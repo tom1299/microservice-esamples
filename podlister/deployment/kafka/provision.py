@@ -121,16 +121,18 @@ def install_kafka_operator(namespace):
                 logger.info('Cluster operator not yet running')
 
 
-def create_cluster(namespace, cluster_name):
+def create_cluster(namespace):
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    json_file = current_dir + "/kafka-cluster.json"
+    with open(json_file) as file:
+        body = json.load(file)
+
+    cluster_name = body["metadata"]["name"]
+
     deployments = apps_api.list_namespaced_deployment(namespace).items
     if list(filter(lambda deployment: deployment.metadata.name.startswith(cluster_name), deployments)):
         logger.info('Cluster already deployed in namespace %s', namespace)
         return
-
-    current_dir = os.path.dirname(os.path.realpath(__file__))
-    json_file = current_dir + "/kafka-persistent-single.json"
-    with open(json_file) as file:
-        body = json.load(file)
 
     custom_objects_api = client.CustomObjectsApi(core_api.api_client)
     custom_objects_api.create_namespaced_custom_object(group="kafka.strimzi.io", version="v1beta1", plural="kafkas",
@@ -143,7 +145,7 @@ target_namespace = "kafka-dev"
 
 create_namespace(target_namespace)
 install_kafka_operator(target_namespace)
-create_cluster(target_namespace, "my-cluster")
+create_cluster(target_namespace)
 
 external_port = get_external_port(service_name + "-bootstrap", target_namespace)
 
