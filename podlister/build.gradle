@@ -39,4 +39,14 @@ application {
 
 test {
     useJUnitPlatform()
+    systemProperty "kubernetes.disable.autoConfig", true
+    systemProperty "no.proxy", System.getenv("no_proxy")
+    systemProperty "http.proxy", System.getenv("http_proxy")
+    systemProperty "https.proxy", System.getenv("https_proxy")
+    systemProperty "e2eTest", project.getProperty("e2eTest")
+    systemProperty "k8s.cluster.url", System.getenv("K8S_CLUSTER_URL")
+    systemProperty "k8s.cluster.ca.file", System.getenv("K8S_CLUSTER_CA_FILE")
+    systemProperty "k8s.cluster.client.key.file", System.getenv("K8S_CLUSTER_CLIENT_KEY_FILE")
+    systemProperty "k8s.cluster.client.cert.file", System.getenv("K8S_CLUSTER_CLIENT_CERT_FILE")
+    systemProperty "k8s.cluster.namespace", System.getenv("K8S_MASTER_NAMESPACE")
 }
