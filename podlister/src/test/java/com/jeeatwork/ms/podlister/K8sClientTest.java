@@ -12,7 +12,6 @@ public class K8sClientTest {
     @Test
     @EnabledIfSystemProperty(named = "e2eTest", matches = "true")
     public void testListPodsInNamespace() {
-        System.getProperties().list(System.out);
         String clusterUrl = System.getProperty("k8s.cluster.url");
         String clusterCaFile = System.getProperty("k8s.cluster.ca.file");
         String clientKeyFile = System.getProperty("k8s.cluster.client.key.file");

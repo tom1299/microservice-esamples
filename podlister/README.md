@@ -66,3 +66,13 @@ curl: (52) Empty reply from server
 ```
 
 ## Create a test case
+A first test case exist for testing the K8s Client: `K8sCleintTest`. System properties or
+environment varialbles need to be set accordingly for the test to be actually executed:
+
+```shell
+-ea -De2eTest=true -Dk8s.cluster.url=https://127.0.0.1:35297 -Dk8s.cluster.ca.file=/home/tom1299/git/microservice-esamples/podlister/secrets/cluster_ca.pem -Dk8s.cluster.client.key.file=/home/tom1299/git/microservice-esamples/podlister/secrets/client_key.pem -Dk8s.cluster.client.cert.file=/home/tom1299/git/microservice-esamples/podlister/secrets/client_cert.pem -Dk8s.cluster.namespace=kafka-dev -Dno.proxy=127.0.0.1
+```
+
+Especially important is the system property `no.proxy` when testing on a cluster on localhost / 127.0.0.1.
+
+See also `build.gradle`
