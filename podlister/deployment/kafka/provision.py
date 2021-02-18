@@ -8,8 +8,6 @@ from confluent_kafka import Producer
 from retrying import retry
 
 logger = logging.getLogger('provision')
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.INFO)
 
 config.load_kube_config()
 
@@ -17,11 +15,16 @@ core_api = client.CoreV1Api()
 apps_api = client.AppsV1Api()
 
 
+def init_logging():
+    logger.addHandler(logging.StreamHandler())
+    logger.setLevel(logging.INFO)
+
+
 def get_node_ips():
     ip_addresses = chain(*list(map(lambda node: node.status.addresses, core_api.list_node().items)))
     internal_ip_addresses = list(filter(lambda address: address.type == 'InternalIP', ip_addresses))
     internal_ips = list(map(lambda ip: ip.address, internal_ip_addresses))
-    logger.info("Node ip addresses found %s", internal_ips)
+    logger.debug("Node ip addresses found %s", internal_ips)
     return internal_ips
 
 
@@ -29,7 +32,6 @@ def is_port_open(ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(1)
     try:
-        logger.info("Trying ip %s and port %s", ip, port)
         result = sock.connect_ex((ip, port))
         return result == 0
     except:
@@ -66,7 +68,7 @@ def test_ok(err, msg):
         return False
     else:
         logger.info("Successfully produced message: %s", msg.value())
-        return True;
+        return True
 
 
 def create_namespace(namespace):
@@ -140,20 +142,29 @@ def create_cluster(namespace):
     logger.info('Cluster successfully deployed in namespace %s', namespace)
 
 
-service_name = "external"
-target_namespace = "kafka-dev"
+def main():
+    service_name = "external"
+    target_namespace = "kafka-dev"
 
-create_namespace(target_namespace)
-install_kafka_operator(target_namespace)
-create_cluster(target_namespace)
+    logger.info(f"Starting to provision kafka cluster in namespace {target_namespace}")
 
-external_port = get_external_port(service_name + "-bootstrap", target_namespace)
+    init_logging()
+    create_namespace(target_namespace)
+    install_kafka_operator(target_namespace)
+    create_cluster(target_namespace)
 
-node_listening = get_node_listening(external_port)
+    logger.info(f"Kafka cluster successfully installed waiting for services to become available")
 
-if not node_listening:
-    raise Exception(f"No node listening on port {external_port}")
+    external_port = get_external_port(service_name + "-bootstrap", target_namespace)
 
-logger.info("Using node %s for access", node_listening)
+    node_listening = get_node_listening(external_port)
+    if not node_listening:
+        raise Exception(f"No node listening on port {external_port}")
 
-test_cluster(node_listening, external_port)
+    logger.info("Using node %s for access", node_listening)
+
+    test_cluster(node_listening, external_port)
+
+
+if __name__ == "__main__":
+    main()
