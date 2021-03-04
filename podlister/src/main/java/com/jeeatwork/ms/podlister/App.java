@@ -3,23 +3,16 @@
  */
 package com.jeeatwork.ms.podlister;
 
-import com.fasterxml.jackson.databind.ser.std.StringSerializer;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.KafkaProducer;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
 
 @Slf4j
 public class App {
@@ -29,9 +22,6 @@ public class App {
     }
 
     private void run(String namespace) {
-//        log.info("no.proxy is set to {}", System.getenv("no.proxy"));
-//        Config c = new ConfigBuilder().build();
-//        Config.configFromSysPropsOrEnvVars(c);
         final KubernetesClient client = new DefaultKubernetesClient().inNamespace(namespace);
         final KafkaProducer kafkaProducer = new KafkaProducer<>(KafkaUtils.createProducerProps(this));
 

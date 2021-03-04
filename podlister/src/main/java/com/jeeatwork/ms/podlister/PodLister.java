@@ -35,7 +35,6 @@ public class PodLister {
             kafkaProducer.send(record);
         }
         catch (Exception e) {
-            e.printStackTrace();
             log.error("An error occurred while trying to list the pods", e);
         }
     }
