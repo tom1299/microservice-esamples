@@ -165,7 +165,7 @@ def main(argv):
     if not node_listening:
         raise Exception(f"No node listening on port {external_port}")
 
-    logger.info("Using node %s for access", node_listening)
+    logger.info("Using node %s on port %s for access", node_listening, external_port)
 
     test_cluster(node_listening, external_port)
 
