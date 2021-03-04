@@ -50,3 +50,18 @@ test {
     systemProperty "k8s.cluster.client.cert.file", "$projectDir/secrets/client_cert.pem"
     systemProperty "k8s.cluster.namespace", "kafka-dev"
 }
+
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    manifest {
+        attributes 'Implementation-Title': "$application.mainClassName",
+                'Implementation-Version': archiveVersion,
+                'Main-Class': "$application.mainClassName"
+    }
+    archiveBaseName = 'podlister'
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+fatJar.mustRunAfter jar

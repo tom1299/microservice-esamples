@@ -61,7 +61,7 @@ public class KafkaUtils {
 		Properties props = KafkaUtils.addBootstrapServer(new Properties());
 		props.put(ProducerConfig.CLIENT_ID_CONFIG, usingObject.getClass().getSimpleName());
 		addSerdesProps(props);
-		log.info("Created kafka producer properties are %s", props);
+		log.info("Created kafka producer properties are {}", props);
 		return props;
 	}
 
@@ -77,7 +77,7 @@ public class KafkaUtils {
 		props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, groupIdConfig);
-		log.info("Created kafka producer properties are %s", props);
+		log.info("Created kafka producer properties are {}", props);
 		return props;
 	}
 }

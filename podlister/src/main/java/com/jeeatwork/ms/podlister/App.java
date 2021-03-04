@@ -4,6 +4,8 @@
 package com.jeeatwork.ms.podlister;
 
 import com.fasterxml.jackson.databind.ser.std.StringSerializer;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
@@ -27,6 +29,9 @@ public class App {
     }
 
     private void run(String namespace) {
+//        log.info("no.proxy is set to {}", System.getenv("no.proxy"));
+//        Config c = new ConfigBuilder().build();
+//        Config.configFromSysPropsOrEnvVars(c);
         final KubernetesClient client = new DefaultKubernetesClient().inNamespace(namespace);
         final KafkaProducer kafkaProducer = new KafkaProducer<>(KafkaUtils.createProducerProps(this));
 
@@ -40,7 +45,7 @@ public class App {
     }
 
     public static void main(String[] args) throws Exception {
-        log.info("Pod listener command line arguments %s", args);
+        log.info("Pod listener command line arguments {}", args);
 
         String namespace;
         if (args.length > 0) {
@@ -51,7 +56,7 @@ public class App {
                     "/var/run/secrets/kubernetes.io/serviceaccount/namespace")));
         }
 
-        log.info("Starting pod listener in namespace %s", namespace);
+        log.info("Starting pod listener in namespace {}", namespace);
         App app = new App();
         app.run(namespace);
     }

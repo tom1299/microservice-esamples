@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podlister
+spec:
+  selector:
+    matchLabels:
+      app: podlister
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: podlister
+    spec:
+      serviceAccountName: podlister
+      containers:
+        - image: ghcr.io/tom1299/k8s-udp-load-balancing/podlister
+          name: podlister
+          imagePullPolicy: Always
+          env:
+          - name: BROKER_HOST
+            value: $(MY_CLUSTER_KAFKA_BOOTSTRAP_PORT_9092_TCP_ADDR)
+          - name: BROKER_PORT
+            value: $(MY_CLUSTER_KAFKA_BOOTSTRAP_PORT_9092_TCP_PORT)
+          - name: no.proxy
+            value: $(KUBERNETES_SERVICE_HOST)
