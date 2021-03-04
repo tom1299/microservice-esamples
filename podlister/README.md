@@ -76,3 +76,29 @@ environment varialbles need to be set accordingly for the test to be actually ex
 Especially important is the system property `no.proxy` when testing on a cluster on localhost / 127.0.0.1.
 
 See also `build.gradle`
+
+## Building
+To build an all in one jar user the command:
+```shell
+gradle clean fatJar
+```
+
+To build and push the docker container use the command:
+```shell
+docker build -t ghcr.io/tom1299/k8s-udp-load-balancing/podlister:latest .
+docker push ghcr.io/tom1299/k8s-udp-load-balancing/podlister:latest
+```
+
+To deploy it to k8s cluster use the following commands:
+```shell
+kubectl apply -n kafka-dev -f podlister.clusterrole.yaml 
+kubectl apply -n kafka-dev -f podlister.clusterrolebinding.yaml 
+kubectl apply -n kafka-dev -f podlister.serviceaccount.yaml 
+kubectl apply -n kafka-dev -f podlister.deployment.yaml
+```
+
+If just the image has changed a `rollout restart` is sufficient:
+
+```shell
+kubectl -n kafka-dev rollout restart deployment podlister
+```
