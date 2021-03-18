@@ -30,7 +30,7 @@ public class PodListerConsumer {
 
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Starting shutdown");
+            log.info("Starting shutdown");
             consumer.wakeup();
             try {
                 mainThread.join();

@@ -1,7 +1,6 @@
 package com.jeeatwork.ms.podlister;
 
 import lombok.Data;
-import lombok.Setter;
 import lombok.ToString;
 
 import java.util.ArrayList;
