@@ -51,7 +51,7 @@ public class KafkaUtils {
 		}
 		String brokerPort = System.getenv("BROKER_PORT");
 		if (brokerPort == null || brokerPort.isEmpty()) {
-			brokerPort = "30101";
+			brokerPort = "32223";
 		}
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerHost + ":" + brokerPort);
 		return props;
